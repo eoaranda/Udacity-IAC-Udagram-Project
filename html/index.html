@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Udagram</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">Udagram</div>
+            <input type="text" placeholder="Search" class="search-bar">
+            <div class="nav-links">
+                <a href="#">Home</a>
+                <a href="#">Profile</a>
+                <a href="#">Settings</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="profile">
+            <div class="profile-header">
+                <img src="https://via.placeholder.com/150" alt="Profile Picture" class="profile-pic">
+                <div class="profile-info">
+                    <h2 class="username">User123</h2>
+                    <div class="stats">
+                        <span>Posts: <strong>10</strong></span>
+                        <span>Followers: <strong>200</strong></span>
+                        <span>Following: <strong>180</strong></span>
+                    </div>
+                </div>
+            </div>
+            <button class="follow-btn" id="followBtn">Follow</button>
+        </div>
+
+        <!-- Feed Section -->
+        <div class="feed">
+            <div class="post">
+                <img src="https://via.placeholder.com/600x400" alt="Post Image" class="post-image">
+                <div class="post-info">
+                    <h3>@User123</h3>
+                    <p>This is a sample post caption.</p>
+                </div>
+            </div>
+            <div class="post">
+                <img src="https://via.placeholder.com/600x400" alt="Post Image" class="post-image">
+                <div class="post-info">
+                    <h3>@User123</h3>
+                    <p>This is another sample post caption.</p>
+                </div>
+            </div>
+            <!-- Add more posts as needed -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+/* Reset */
+body, h1, h2, h3, p, div, a {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #fafafa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 60px;
+}
+
+/* Navbar */
+.navbar {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    background-color: #fff;
+    border-bottom: 1px solid #dbdbdb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 10px 20px;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.search-bar {
+    border: 1px solid #dbdbdb;
+    border-radius: 3px;
+    padding: 5px;
+    width: 200px;
+}
+
+.nav-links a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Profile Section */
+.profile {
+    background-color: #fff;
+    width: 100%;
+    max-width: 980px;
+    border: 1px solid #dbdbdb;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+}
+
+.profile-pic {
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    margin-right: 20px;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.username {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.stats {
+    display: flex;
+    gap: 20px;
+}
+
+.follow-btn {
+    padding: 10px 20px;
+    background-color: #3897f0;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* Feed Section */
+.feed {
+    width: 100%;
+    max-width: 600px;
+}
+
+.post {
+    background-color: #fff;
+    margin-bottom: 20px;
+    border: 1px solid #dbdbdb;
+}
+
+.post-image {
+    width: 100%;
+}
+
+.post-info {
+    padding: 10px;
+}
+
+.post-info h3 {
+    font-size: 18px;
+}
+
+.post-info p {
+    margin-top: 5px;
+    color: #666;
+    font-size: 14px;
+}
