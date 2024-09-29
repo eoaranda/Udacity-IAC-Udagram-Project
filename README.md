@@ -35,24 +35,37 @@ chmod -R +x scripts
 
 
 ### Spin up 
+
+#### If we want to use a specific Profile and Region, you can send them as the last 2 parameters:
 To spin up the network run the following command in your terminal:
 ```sh
-./scripts/create.sh udagram-project network.yml network-parameters.json 
+./scripts/create.sh udagram-project-network network.yml network-parameters.json us-east-1 udacity
 ```
 
 To spin up the application run the following command in your terminal:
 ```sh
-./scripts/create.sh udagram-project udagram.yml udagram-parameters.json
+./scripts/create.sh udagram-project-app udagram.yml udagram-parameters.json us-east-1 udacity
+```
+
+#### If you want to use Default values you can omit this parameters:
+To spin up the network run the following command in your terminal:
+```sh
+./scripts/create.sh udagram-project-network network.yml network-parameters.json 
+```
+
+To spin up the application run the following command in your terminal:
+```sh
+./scripts/create.sh udagram-project-app udagram.yml udagram-parameters.json
 ```
 
 ### Tear down (Delete)
 To tear down (or delete) the network run the following command in your terminal:
 ```sh
-./scripts/create.sh udagram-project network.yml network-parameters.json 
+./scripts/delete.sh udagram-project-network "" udacity 
 ```
 
 To tear down (or delete) the application run the following command in your terminal:
 ```sh
-./scripts/create.sh udagram-project udagram.yml udagram-parameters.json
+./scripts/delete.sh udagram-project-app "" udacity 
 ```
 

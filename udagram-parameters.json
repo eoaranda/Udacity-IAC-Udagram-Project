@@ -1,6 +1,14 @@
 [
-	{
-		"ParameterKey": "Add you parameters here",
-		"ParameterValue": "Add you parameters here"
-	}
+    {
+        "ParameterKey": "EnvironmentName",
+        "ParameterValue": "Udagram-InfrastructureAsCode"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    },
+    {
+        "ParameterKey": "S3BucketName",
+        "ParameterValue": "udagram-static-content-bucket-edgar"
+    }
 ]
