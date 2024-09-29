@@ -19,22 +19,21 @@ The architecture will be divided into two CloudFormation templates: one for netw
 - Make sure that AWS CLI is installed and configured before running the commands below
 - Make sure you have that your IAM account has the correct permissions and that you have SSM installed and configured
   
-
-### Download
+#### Download
 Clone the git repository
 ```sh
 git clone https://github.com/eoaranda/Udacity-IAC-Udagram-Project.git
 cd Udacity-IAC-Udagram-Project
 ```
 
-### Script Permissions
+#### Script Permissions
 To make sure that the files in the `scripts` folder are executable, you can use the following command:
 ```sh
 chmod -R +x scripts
 ```
 
-
 ### Spin up 
+- Once you have ran the templates, the `create` script will automatically copy the `html\` content to your s3 bucket
 
 #### If we want to use a specific Profile and Region, you can send them as the last 2 parameters:
 To spin up the network run the following command in your terminal:
@@ -69,3 +68,14 @@ To tear down (or delete) the application run the following command in your termi
 ./scripts/delete.sh udagram-project-app "" udacity 
 ```
 
+
+## Expected Result Example:
+
+### Udagram Stack
+![img-2](assets/Udagram-Stack.png)
+
+### Udagram S3 Bucket
+![img-3](assets/Udagram-S3.png)
+
+### Udagram Application 
+![img-4](assets/Udagram-App.png)
