@@ -1,18 +1,311 @@
+AWSTemplateFormatVersion: "2010-09-09"
 Description: CD12352 - Infrastructure as Code Project - Udagram
 
 Parameters:
-  # Add your parameters here
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+    Default: Udagram-InfrastructureAsCode
+
+  # The EC2 instance type
+  InstanceType:
+    Description: The EC2 instance type
+    Type: String
+    Default: t2.micro
+
+  S3BucketName:
+    Description: The name of the S3 bucket for the web application
+    Type: String
+    Default: udagram-static-content-bucket-edgar # You can set a default or leave it empty
 
 Resources:
-  # Add your resources here
-  # We include a portion of the LaunchTemplate resource so you can use the UserData.
+
+  # Load balancer security group used to allow http access to the load balancer
+  LBSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http access to our load balancer
+      VpcId:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPC"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0 # Allow all traffic to the load balancer from port 80
+
+  # Web server security group , that are behind the load balancer
+  WebServerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http access to our hosts from the LB Security Group
+      VpcId:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPC"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref LBSecGroup # Allow traffic from the load balancer security group above
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+
+  # The S3 bucket that will store the static content for the web application
+  StaticContentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  # The bucket policy that allows public read access to the S3 bucket
+  StaticContentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3BucketName  # Reference to the bucket created above
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${S3BucketName}/*"
+
+  # The IAM role that allows the EC2 instance to assume the role for the S3 bucket
+  WebAppInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${EnvironmentName}-Web-Servers"
+      AssumeRolePolicyDocument: # The policy that allows the EC2 instance to assume the role for the S3 bucket
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject" # Read permission
+                  - "s3:PutObject" # Write permission
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3BucketName}/*"
+
+  # The IAM instance profile that allows the EC2 instance to assume the role for the S3 bucket
+  WebAppInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref WebAppInstanceRole
+
+  # The Launch Template for the web servers that will be behind the load balancer
   WebAppLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
-    Properties: 
+    Properties:
+      LaunchTemplateName: !Sub "${EnvironmentName}-web-servers"
       LaunchTemplateData:
-        UserData:
-          Fn::Base64: |
-            #!/bin/bash
-            apt-get update -y
-            sudo apt-get install nginx -y
-            service nginx start
+        UserData: !Base64 |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install -y awscli nginx
+          sudo service nginx start
+
+          # Create index.html file
+          cat <<EOF > /var/www/html/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Udagram</title>
+              <link rel="stylesheet" href="https://udagram-static-content-bucket-edgar.s3.amazonaws.com/style.css">
+          </head>
+          <body>
+              <!-- Navbar -->
+              <nav class="navbar">
+                  <div class="container">
+                      <div class="logo">it works! Udagram, Udacity</div>
+                      <input type="text" placeholder="Search" class="search-bar">
+                      <div class="nav-links">
+                          <a href="#">Home</a>
+                          <a href="#">Profile</a>
+                          <a href="#">Settings</a>
+                      </div>
+                  </div>
+              </nav>
+
+              <!-- Main Content -->
+              <div class="container">
+                  <div class="profile">
+                      <div class="profile-header">
+                          <img src="https://via.placeholder.com/150" alt="Profile Picture" class="profile-pic">
+                          <div class="profile-info">
+                              <h2 class="username">User123</h2>
+                              <div class="stats">
+                                  <span>Posts: <strong>10</strong></span>
+                                  <span>Followers: <strong>200</strong></span>
+                                  <span>Following: <strong>180</strong></span>
+                              </div>
+                          </div>
+                      </div>
+                      <button class="follow-btn" id="followBtn">Follow</button>
+                  </div>
+
+                  <!-- Feed Section -->
+                  <div class="feed">
+                      <div class="post">
+                          <img src="https://via.placeholder.com/600x400" alt="Post Image" class="post-image">
+                          <div class="post-info">
+                              <h3>@User123</h3>
+                              <p>This is a sample post caption.</p>
+                          </div>
+                      </div>
+                      <div class="post">
+                          <img src="https://via.placeholder.com/600x400" alt="Post Image" class="post-image">
+                          <div class="post-info">
+                              <h3>@User123</h3>
+                              <p>This is another sample post caption.</p>
+                          </div>
+                      </div>
+                      <!-- Add more posts as needed -->
+                  </div>
+              </div>
+
+              <script src="https://udagram-static-content-bucket-edgar.s3.amazonaws.com/script.js"></script>
+          </body>
+          </html>
+          EOF
+
+          # Reload nginx to serve the new content
+          sudo systemctl reload nginx
+        ImageId: ami-0557a15b87f6559cf
+        SecurityGroupIds:
+          - !Ref WebServerSecGroup
+        InstanceType: !Ref InstanceType
+        BlockDeviceMappings:
+          - DeviceName: "/dev/sdk"
+            Ebs:
+              VolumeSize: 10
+        IamInstanceProfile:
+          Name: !Ref WebAppInstanceProfile
+        TagSpecifications:
+        - ResourceType: instance
+          Tags:
+            - Key: Name
+              Value: !Sub "${EnvironmentName}-WebAppInstance"
+
+  # The Auto Scaling Group that will be used to scale the web servers
+  WebAppGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: # This logic below was quite a headache to get right
+        !Split
+          - ","
+          - !ImportValue
+            Fn::Sub: "${EnvironmentName}-PRIV-NETS" # Importing the private subnets from the VPC stack
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebAppLaunchTemplate
+        Version: !GetAtt WebAppLaunchTemplate.LatestVersionNumber
+      MinSize: "1"
+      DesiredCapacity: "1"
+      MaxSize: "3"
+      TargetGroupARNs:
+        - Ref: WebAppTargetGroup
+
+  # The Load Balancer that will distribute traffic to the web servers
+  WebAppLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets: # This logic below was quite a headache to get right
+        !Split
+          - ","
+          - !ImportValue
+            Fn::Sub: "${EnvironmentName}-PUB-NETS" # Importing the public subnets from the VPC stack
+      SecurityGroups:
+        - !Ref LBSecGroup
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: "60"
+
+  # The Target Group that the load balancer will use to distribute traffic to the web servers
+  WebAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 20
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      Port: 80
+      Protocol: HTTP
+      VpcId:
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPC"
+  
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WebAppTargetGroup
+      LoadBalancerArn: !Ref WebAppLB
+      Port: 80
+      Protocol: HTTP
+
+  # The Listener Rule that will forward traffic to the target group
+  ALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule #the listener rule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref WebAppTargetGroup
+      Conditions: # we can specify conditions : path-pattern, host-header, http-header
+        - Field: path-pattern
+          Values: [/] #single slash means the root path
+      ListenerArn: !Ref ALBListener
+      Priority: 1
+  
+Outputs:
+  LoadBalancerDNSName:
+    Description: "DNS name of the Load Balancer"
+    Value: !GetAtt WebAppLB.DNSName
+
+  S3BucketURL:
+    Description: "URL of the S3 bucket for static content"
+    Value: !Sub "http://${S3BucketName}.s3.amazonaws.com"
+
+  WebAppInstanceRoleArn:
+    Description: "ARN of the IAM role for the EC2 instances"
+    Value: !GetAtt WebAppInstanceRole.Arn
+
+  WebAppInstanceProfileArn:
+    Description: "ARN of the IAM instance profile for the EC2 instances"
+    Value: !GetAtt WebAppInstanceProfile.Arn
+
+  WebAppAutoScalingGroupName:
+    Description: "Name of the Auto Scaling Group"
+    Value: !Ref WebAppGroup
+
+  TargetGroupARN:
+    Description: "ARN of the Target Group used by the Load Balancer"
+    Value: !Ref WebAppTargetGroup
+  
+  S3BucketNameOutput:  # New output for the S3 Bucket Name
+    Description: "The name of the S3 bucket for the web application"
+    Value: !Ref S3BucketName
