@@ -11,7 +11,7 @@ Parameters:
   InstanceType:
     Description: The EC2 instance type
     Type: String
-    Default: t2.micro
+    Default: t3.micro
 
   S3BucketName:
     Description: The name of the S3 bucket for the web application
@@ -45,38 +45,15 @@ Resources:
           FromPort: 80
           ToPort: 80
           SourceSecurityGroupId: !Ref LBSecGroup # Allow traffic from the load balancer security group above
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0 # Allow SSH access from anywhere (not recommended for production)
       SecurityGroupEgress:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 65535
           CidrIp: 0.0.0.0/0
-
-  # The S3 bucket that will store the static content for the web application
-  StaticContentBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref S3BucketName
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: error.html
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        RestrictPublicBuckets: false
-
-  # The bucket policy that allows public read access to the S3 bucket
-  StaticContentBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref S3BucketName  # Reference to the bucket created above
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal: "*"
-            Action: "s3:GetObject"
-            Resource: !Sub "arn:aws:s3:::${S3BucketName}/*"
 
   # The IAM role that allows the EC2 instance to assume the role for the S3 bucket
   WebAppInstanceRole:
@@ -102,8 +79,10 @@ Resources:
                 Action:
                   - "s3:GetObject" # Read permission
                   - "s3:PutObject" # Write permission
+                  - "s3:ListBucket" 
                 Resource:
-                  - !Sub "arn:aws:s3:::${S3BucketName}/*"
+                  - !Sub "arn:aws:s3:::${S3BucketName}"       # Allows listing the bucket
+                  - !Sub "arn:aws:s3:::${S3BucketName}/*"     # Allows accessing objects in the bucket
 
   # The IAM instance profile that allows the EC2 instance to assume the role for the S3 bucket
   WebAppInstanceProfile:
@@ -119,83 +98,15 @@ Resources:
     Properties:
       LaunchTemplateName: !Sub "${EnvironmentName}-web-servers"
       LaunchTemplateData:
-        UserData: !Base64 |
-          #!/bin/bash
-          sudo apt-get update -y
-          sudo apt-get install -y awscli nginx
-          sudo service nginx start
-
-          # Create index.html file
-          cat <<EOF > /var/www/html/index.html
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Udagram</title>
-              <link rel="stylesheet" href="https://udagram-static-content-bucket-edgar.s3.amazonaws.com/style.css">
-          </head>
-          <body>
-              <!-- Navbar -->
-              <nav class="navbar">
-                  <div class="container">
-                      <div class="logo">it works! Udagram, Udacity</div>
-                      <input type="text" placeholder="Search" class="search-bar">
-                      <div class="nav-links">
-                          <a href="#">Home</a>
-                          <a href="#">Profile</a>
-                          <a href="#">Settings</a>
-                      </div>
-                  </div>
-              </nav>
-
-              <!-- Main Content -->
-              <div class="container">
-                  <div class="profile">
-                      <div class="profile-header">
-                          <img src="https://via.placeholder.com/150" alt="Profile Picture" class="profile-pic">
-                          <div class="profile-info">
-                              <h2 class="username">User123</h2>
-                              <div class="stats">
-                                  <span>Posts: <strong>10</strong></span>
-                                  <span>Followers: <strong>200</strong></span>
-                                  <span>Following: <strong>180</strong></span>
-                              </div>
-                          </div>
-                      </div>
-                      <button class="follow-btn" id="followBtn">Follow</button>
-                  </div>
-
-                  <!-- Feed Section -->
-                  <div class="feed">
-                      <div class="post">
-                          <img src="https://via.placeholder.com/600x400" alt="Post Image" class="post-image">
-                          <div class="post-info">
-                              <h3>@User123</h3>
-                              <p>This is a sample post caption.</p>
-                          </div>
-                      </div>
-                      <div class="post">
-                          <img src="https://via.placeholder.com/600x400" alt="Post Image" class="post-image">
-                          <div class="post-info">
-                              <h3>@User123</h3>
-                              <p>This is another sample post caption.</p>
-                          </div>
-                      </div>
-                      <!-- Add more posts as needed -->
-                  </div>
-              </div>
-
-              <script src="https://udagram-static-content-bucket-edgar.s3.amazonaws.com/script.js"></script>
-          </body>
-          </html>
-          EOF
-
-          # Reload nginx to serve the new content
-          sudo systemctl reload nginx
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            apt-get update -y
+            apt-get install -y awscli apache2
+            systemctl start apache2.service
+            cd /var/www/html
+            aws s3 cp s3://${S3BucketName}/ . --recursive
         ImageId: ami-0557a15b87f6559cf
-        SecurityGroupIds:
-          - !Ref WebServerSecGroup
         InstanceType: !Ref InstanceType
         BlockDeviceMappings:
           - DeviceName: "/dev/sdk"
@@ -204,10 +115,21 @@ Resources:
         IamInstanceProfile:
           Name: !Ref WebAppInstanceProfile
         TagSpecifications:
-        - ResourceType: instance
-          Tags:
-            - Key: Name
-              Value: !Sub "${EnvironmentName}-WebAppInstance"
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub "${EnvironmentName}-WebAppInstance"
+        NetworkInterfaces:  # Add this section for network interface configuration
+          - AssociatePublicIpAddress: true  # This associates a public IP address
+            DeviceIndex: 0
+            SubnetId: !Select # Another headache to get right
+              - 0
+              - !Split 
+                - ","
+                - !ImportValue
+                  Fn::Sub: "${EnvironmentName}-PUB-NETS"  # Get the value directly without using !Sub
+            Groups: 
+              - !Ref WebServerSecGroup
 
   # The Auto Scaling Group that will be used to scale the web servers
   WebAppGroup:
@@ -249,7 +171,7 @@ Resources:
     Properties:
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
-      HealthCheckIntervalSeconds: 20
+      HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 5
       UnhealthyThresholdCount: 2

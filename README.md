@@ -35,7 +35,7 @@ chmod -R +x scripts
 ### Spin up 
 - Once you have ran the templates, the `create` script will automatically copy the `html\` content to your s3 bucket
 
-#### If we want to use a specific Profile and Region, you can send them as the last 2 parameters:
+#### Option 1 - If we want to use a specific Profile and Region, you can send them as the last 2 parameters:
 To spin up the network run the following command in your terminal:
 ```sh
 ./scripts/create.sh create-network udagram-project us-east-1 udacity
@@ -46,7 +46,7 @@ To spin up the application run the following command in your terminal:
 ./scripts/create.sh create-app udagram-project us-east-1 udacity
 ```
 
-#### If you want to use Default values you can omit this parameters:
+#### Option 2 - If you want to use Default values you can omit this parameters:
 To spin up the network run the following command in your terminal:
 ```sh
 ./scripts/create.sh create-network udagram-project
@@ -58,6 +58,10 @@ To spin up the application run the following command in your terminal:
 ```
 
 ### Tear down (Delete)
+
+
+#### Option 1 - If we want to use a specific Profile and Region, you can send them as the last 2 parameters:
+
 To tear down (or delete) the network run the following command in your terminal:
 ```sh
 ./scripts/delete.sh delete-network udagram-project us-east-1 udacity 
@@ -68,7 +72,8 @@ To tear down (or delete) the application run the following command in your termi
 ./scripts/delete.sh delete-app udagram-project us-east-1 udacity 
 ```
 
-#### If you want to use Default values you can omit this parameters:
+#### Option 2 - If you want to use Default values you can omit this parameters:
+
 To tear down (or delete) the network run the following command in your terminal:
 ```sh
 ./scripts/delete.sh delete-network udagram-project
