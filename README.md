@@ -86,6 +86,8 @@ To tear down (or delete) the application run the following command in your termi
 
 ## Expected Result Example:
 
+Working URL: [Udagram Web Application](http://udagra-webap-a1kz7tsblq0z-1391343704.us-east-1.elb.amazonaws.com/)
+
 ### Udagram Stack
 ![img-2](assets/Udagram-Stack.png)
 
