@@ -77,6 +77,7 @@ To tear down (or delete) the network run the following command in your terminal:
 To tear down (or delete) the application run the following command in your terminal:
 ```sh
 ./scripts/delete.sh delete-app  udagram-project
+```
 
 ## Expected Result Example:
 
