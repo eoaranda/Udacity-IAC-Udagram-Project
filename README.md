@@ -68,6 +68,15 @@ To tear down (or delete) the application run the following command in your termi
 ./scripts/delete.sh delete-app udagram-project us-east-1 udacity 
 ```
 
+#### If you want to use Default values you can omit this parameters:
+To tear down (or delete) the network run the following command in your terminal:
+```sh
+./scripts/delete.sh delete-network udagram-project
+```
+
+To tear down (or delete) the application run the following command in your terminal:
+```sh
+./scripts/delete.sh delete-app  udagram-project
 
 ## Expected Result Example:
 
