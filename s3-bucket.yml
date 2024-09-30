@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create an S3 bucket for static content
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+    Default: Udagram-InfrastructureAsCode
+
+  S3BucketName:
+    Description: The name of the S3 bucket for the web application
+    Type: String
+    Default: udagram-static-content-bucket-edgar  # You can set a default or leave it empty
+
+Resources:
+
+  # The S3 bucket that will store the static content for the web application
+  StaticContentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  # The bucket policy that allows public read access to the S3 bucket
+  StaticContentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticContentBucket  # Reference to the bucket created above
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${S3BucketName}/*"
+
+Outputs:
+  S3BucketNameOutput:
+    Description: "The name of the S3 bucket for the web application"
+    Value: !Ref S3BucketName
